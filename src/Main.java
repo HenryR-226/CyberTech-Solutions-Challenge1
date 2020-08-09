@@ -151,34 +151,52 @@ public class Main {
 //    }
 }
 
-//Appends a Long (first 64) and Byte (last 8) together for it's own type
-class biggerLong {
-    static ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-    long long1;
-    byte ending;
-    byte[] me;
-    biggerLong(long arg1, byte arg2){
-        me = new byte[9];
-        me[0] = arg2;
-        for (int i = 1; i < 9; ++i) {
-            me[i] = (byte) (arg1 >> (8 - i - 1 << 3));
+/**
+ * Utility class, stores a long as 8 byte array with helper methods to make implementation simpler
+ * Constructor takes long and creates byte[8]
+ * toString generates string of "0xB1 0xB2 0xB3 ..." etc
+ * getLowest returns lowest byte
+ * XOR computes XOR of entire array to long, or one byte to the lowest
+ */
+class byteArray {
+    byte[] me = new byte[8];
+    static StringBuilder builder = new StringBuilder();
+
+    /**
+     * Constructor, converts long to byte array of 8
+     * @param input, long (64 bit) to convert to 8 bytes
+     */
+    byteArray(long input){
+        for (int ctr = 0; ctr <8; ctr++) {
+            me[ctr] = (byte) (input >> ((64 - ctr+1)*8) & 0xff);    //Shift input over by 64 - (ctr +1) * 8. eg: at 1, this is 56
         }
     }
+    //Utility for getting lowest byte
+    byte getLowest(){
+        return me[0];
+    }
+    //Does last bit end with 1?
+    boolean endsWithOne(){
+        return ((getLowest() & 1L) != 0);
+    }
 
-    public byte[] getMe(){
-        return me;
+    @Override
+    public String toString() {
+        for (byte b : me)
+            builder.append("0x" + String.format("%02X",b) + ", ");
+        return builder.toString();
     }
-    public long peelOffLong(){
-        return long1;
+    //Utility to take XOR conveniently of entire array with given argument array
+    public byte[] XOR(byte[] arg2) throws ArrayIndexOutOfBoundsException {
+        if (arg2.length!=me.length) throw new ArrayIndexOutOfBoundsException("XOR called on arrays with Diff Length");
+        byte[] returnVal = new byte[arg2.length];
+        for (int ctr = 0; ctr<arg2.length; ctr++){
+            returnVal[ctr] = (byte) (me[ctr] ^ arg2[ctr]);
+        }
+        return returnVal;
     }
-    public byte peelOffLastByte(){
-        return ending;
-    }
-    public boolean lastBitOne(){
-        return ((peelOffLastByte() & ((byte)1))==1);
-    }
-    public String getMeAsHex(){
-        StringBuilder builder = new StringBuilder();
-        builder.append("0x")
+    //Take input byte and XOR it with own last byte
+    public byte XOR (byte arg2) {
+        return (byte) (getLowest() ^ arg2);
     }
 }
